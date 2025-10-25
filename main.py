@@ -8,6 +8,11 @@ DATA_PATTERN = "data/next_day_wildfire_spread_{}.tfrecord"
 INDEX_PATTERN = "data/next_day_wildfire_spread_{}.tfindex"
 BATCH_SIZE = 32
 
+INPUT_FEATURES = ['elevation', 'th', 'vs',  'tmmn', 'tmmx', 'sph', 
+                  'pr', 'pdsi', 'NDVI', 'population', 'erc', 'PrevFireMask']
+
+OUTPUT_FEATURES = ['FireMask', ]
+
 
 def get_dataset(split="train"):
     """Create a TFRecord dataset for the given split (train/eval/test)."""
@@ -39,5 +44,8 @@ def get_data_loader(split="train"):
 
 if __name__ == "__main__":
     train_data_loader = get_data_loader("train")
-    print(next(iter(train_data_loader)))
+    data_point = next(iter(train_data_loader))
+    for key, values in data_point.items():
+        print(f"name: {key}, tensor shape: {values.shape}")
+
 
