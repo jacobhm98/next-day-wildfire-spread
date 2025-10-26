@@ -5,17 +5,20 @@ CNN autoencoder for predicting wildfire spread based on the paper "Next Day Wild
 ## Dataset
 
 The dataset contains ~18,500 fire events from 2012-2020 across the United States:
+
 - **Training**: 14,979 samples
 - **Evaluation**: 1,877 samples
 - **Test**: 1,689 samples
 
 Each sample is a 64×64 km region at 1 km resolution with:
+
 - **12 input features**: elevation, wind direction, wind speed, min/max temperature, humidity, precipitation, drought index, vegetation (NDVI), population density, energy release component (ERC), and previous fire mask
 - **1 output**: Next-day fire mask (binary prediction per pixel)
 
 ## Model Architecture
 
 CNN Autoencoder following the paper's specifications:
+
 - **Initial conv**: 12 → 16 filters
 - **Encoder**: 2 residual blocks with max pooling (16 → 16 → 32 filters)
 - **Bottleneck**: 1 residual block (32 filters)
@@ -27,6 +30,7 @@ CNN Autoencoder following the paper's specifications:
 ## Training Configuration
 
 Matching the paper:
+
 - **Loss**: Weighted binary cross-entropy (weight=3 on fire class)
 - **Optimizer**: Adam with learning rate 0.0001
 - **Batch size**: 32
@@ -49,8 +53,7 @@ uv sync
 ./download_dataset.sh
 
 # Create index files for .tfrecord files
-uv run python -m tfrecord.tools.tfrecord2idx data/next_day_wildfire_spread_train_00.tfrecord data/next_day_wildfire_spread_train_00.tfindex
-# (repeat for all tfrecord files, or create a script to automate)
+uv run create_index.py
 ```
 
 ## Usage
@@ -96,12 +99,14 @@ uv run tensorboard --logdir logs
 ## Checkpoints and Logs
 
 After each epoch, the training script saves:
+
 - **`models/epoch_XXXX.pt`**: Checkpoint for each epoch with full metadata
 - **`models/best_model.pt`**: Best model based on validation AUC-PR
 - **`models/latest.pt`**: Most recent checkpoint
 - **`logs/run_TIMESTAMP/`**: TensorBoard logs
 
 Each checkpoint contains:
+
 ```python
 {
     'epoch': int,
@@ -125,6 +130,7 @@ Each checkpoint contains:
 ## Paper Results
 
 From the paper (Table II):
+
 - **AUC-PR**: 28.4%
 - **Precision**: 33.6%
 - **Recall**: 43.1%
@@ -133,7 +139,7 @@ These are the targets to match/exceed with this implementation.
 
 ## References
 
-Huot, F., Hu, R. L., Goyal, N., Sankar, T., Ihme, M., & Chen, Y. F. (2022). Next day wildfire spread: A machine learning dataset to predict wildfire spreading from remote-sensing data. *IEEE Transactions on Geoscience and Remote Sensing*, 60, 1-13.
+Huot, F., Hu, R. L., Goyal, N., Sankar, T., Ihme, M., & Chen, Y. F. (2022). Next day wildfire spread: A machine learning dataset to predict wildfire spreading from remote-sensing data. _IEEE Transactions on Geoscience and Remote Sensing_, 60, 1-13.
 
 - Paper: https://ieeexplore.ieee.org/abstract/document/9840400
 - Dataset: https://www.kaggle.com/fantineh/next-day-wildfire-spread
