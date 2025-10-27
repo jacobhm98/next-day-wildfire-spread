@@ -233,7 +233,8 @@ def train(
     pos_weight=3.0,
     device=None,
     checkpoint_dir="models",
-    log_dir="logs"
+    log_dir="logs",
+    resume_from=None
 ):
     """Main training function.
 
@@ -245,6 +246,7 @@ def train(
         device: Device to train on (auto-detect if None)
         checkpoint_dir: Directory to save checkpoints
         log_dir: Directory for tensorboard logs
+        resume_from: Path to checkpoint to resume from (optional)
     """
     # Setup device
     if device is None:
@@ -273,6 +275,27 @@ def train(
     criterion = WeightedBCELoss(pos_weight=pos_weight)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+    # Resume from checkpoint if specified
+    start_epoch = 1
+    best_auc_pr = 0
+    if resume_from:
+        print(f"\nResuming from checkpoint: {resume_from}")
+        checkpoint = torch.load(resume_from, map_location=device, weights_only=False)
+
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        best_auc_pr = checkpoint.get('auc_pr', 0)
+
+        print(f"  Resumed from epoch {checkpoint['epoch']}")
+        print(f"  Best AUC-PR so far: {best_auc_pr:.4f}")
+        print(f"  Continuing training from epoch {start_epoch}")
+
+        # Update hyperparameters if they changed
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = learning_rate
+        print(f"  Learning rate set to: {learning_rate}")
+
     # Create dataloaders
     print("Loading datasets...")
     train_loader = get_dataloader("train", batch_size=batch_size, augment=True)
@@ -282,9 +305,8 @@ def train(
     print(f"\nStarting training for {num_epochs} epochs...")
     print(f"Run name: {run_name}")
     print(f"Checkpoints will be saved to: {checkpoint_dir}/")
-    best_auc_pr = 0
 
-    for epoch in range(1, num_epochs + 1):
+    for epoch in range(start_epoch, num_epochs + 1):
         # Train
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device, epoch)
 
@@ -355,6 +377,7 @@ if __name__ == "__main__":
     parser.add_argument("--pos-weight", type=float, default=3.0, help="Weight for fire class")
     parser.add_argument("--checkpoint-dir", type=str, default="models", help="Checkpoint directory")
     parser.add_argument("--log-dir", type=str, default="logs", help="Log directory")
+    parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from (e.g., models/latest.pt)")
 
     args = parser.parse_args()
 
@@ -364,5 +387,6 @@ if __name__ == "__main__":
         learning_rate=args.lr,
         pos_weight=args.pos_weight,
         checkpoint_dir=args.checkpoint_dir,
-        log_dir=args.log_dir
+        log_dir=args.log_dir,
+        resume_from=args.resume
     )
